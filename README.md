@@ -3,7 +3,7 @@
 A comprehensive React-based study application designed to help you prepare for the CCNA 200-301 exam through interactive practice sessions and realistic exam simulations.
 
 ## 🌐 Check the project in Live 
-- [https://ccna-exam-simulator.vercel.app/](https://ccna-exam-simulator.vercel.app/))
+- [https://ccna-exam-simulator.vercel.app/](https://ccna-exam-simulator.vercel.app/)
 
 ## 🎯 Features
 
