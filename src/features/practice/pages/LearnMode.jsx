@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router'
 import { useApp } from '../../../context/AppContext.jsx'
 import DragMatch from '../../../components/UI/DragMatch.jsx'
 import filterByCategory from '../../../utils/filterByCategory.js'
+import ThemeToggle from '../../../components/UI/ThemeToggle.jsx'
+import { ChevronLeft, ChevronRight, Eye, EyeOff, BookOpen, CheckCircle, XCircle, ZoomIn, X } from 'lucide-react'
 
 export default function LearnMode() {
     const { category: catParam } = useParams()
@@ -11,9 +13,7 @@ export default function LearnMode() {
     const category = decodeURIComponent(catParam || '')
 
     const questions = useMemo(() => {
-        if (!Array.isArray(questionsData) || questionsData.length === 0) {
-            return []
-        }
+        if (!Array.isArray(questionsData) || questionsData.length === 0) return []
         return filterByCategory(questionsData, category)
     }, [questionsData, category])
 
@@ -22,57 +22,46 @@ export default function LearnMode() {
             navigate('/practice')
             return
         }
-        if (!questions?.length) return
-        // initialize practice list if changed
+        if (!questions.length) return
         if (state.category !== category || state.practiceQuestions.length !== questions.length) {
             setPractice(category, questions)
         }
     }, [category, questions, setPractice, state.category, state.practiceQuestions.length, navigate])
 
-    // Get current question
     const q = state.practiceQuestions[state.currentQuestionIndex]
+    const reveal = state.showAnswer
 
-    // Initialize state with current question data
-    const [selected, setSelected] = useState([])
-
-    // Calculate default image path based on current question
     const defaultPng = useMemo(() => {
-        return q?.hasImage ? (q.imagePath || `/question-${q.id}.png`) : ''
+        if (!q?.hasImage) return ''
+        return q.imagePath || `/question-${q.id}.png`
     }, [q?.hasImage, q?.imagePath, q?.id])
 
     const [imgSrc, setImgSrc] = useState(defaultPng)
+    const [imageZoomed, setImageZoomed] = useState(false)
+    const [selected, setSelected] = useState([])
 
-    // Reset selected answers when question changes
     useEffect(() => {
-        setSelected([])
-    }, [state.currentQuestionIndex])
+        setImgSrc(defaultPng)
+        setImageZoomed(false)
+        setSelected(state.userAnswers?.[q?.id] || [])
+    }, [defaultPng, q?.id, state.userAnswers])
 
-    // Update image source when defaultPng changes
-    useEffect(() => {
-        if (defaultPng !== imgSrc) {
-            setImgSrc(defaultPng)
-        }
-    }, [defaultPng]) // Remove imgSrc from dependencies to avoid infinite loop
-
-    // NOW you can do conditional returns AFTER all hooks
     if (!q) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
-                    <p className="text-gray-500 mb-4">No questions in this category yet.</p>
+                    <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">No questions found for this category.</p>
                     <button
-                        className="px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700"
                         onClick={() => navigate('/practice')}
+                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                     >
-                        Back
+                        Back to Practice
                     </button>
                 </div>
             </div>
         )
     }
 
-    const options = q?.options ? Object.entries(q.options) : []
-    const reveal = state.showAnswer
     const isDrag = q.type === 'drag-drop'
     const isMulti = !isDrag && Array.isArray(q.correctAnswer) && q.correctAnswer.length > 1
 
@@ -99,128 +88,194 @@ export default function LearnMode() {
 
     const isCorrect = (key) => Array.isArray(q.correctAnswer) && q.correctAnswer.includes(key)
 
+    const showPrev = state.currentQuestionIndex > 0
+    const showNext = state.currentQuestionIndex < state.practiceQuestions.length - 1
+
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-3xl mx-auto px-6 py-8">
-                <div className="flex items-center justify-between mb-4">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/25 to-indigo-50/25 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+            <div className="fixed top-6 right-6 z-50">
+                <ThemeToggle />
+            </div>
+
+            {imageZoomed && q.hasImage && imgSrc && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+                    onClick={() => setImageZoomed(false)}
+                >
+                    <button
+                        className="absolute top-6 right-6 p-2 rounded-full bg-white/15 hover:bg-white/25 text-white transition"
+                        onClick={() => setImageZoomed(false)}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <img
+                        src={imgSrc}
+                        onError={onImgError}
+                        alt={`Question ${q.id} - Zoomed`}
+                        className="max-w-full max-h-full object-contain animate-zoomIn"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
+
+            <div className="max-w-5xl mx-auto px-6 py-10">
+                <div className="flex items-center justify-between mb-6">
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm"
+                        onClick={() => navigate('/practice')}
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        Back
+                    </button>
                     <div className="flex items-center gap-3">
-                        <button
-                            className="px-3 py-1.5 rounded border border-gray-300 bg-white text-sm hover:bg-gray-50"
-                            onClick={() => navigate('/practice')}
-                        >
-                            ← Back
-                        </button>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                        {state.currentQuestionIndex + 1} / {state.practiceQuestions.length}
+                        <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-semibold shadow-md">
+                            {state.currentQuestionIndex + 1} / {state.practiceQuestions.length}
+                        </div>
                     </div>
                 </div>
 
-                <h2 className="text-lg font-semibold mb-4">{q.question}</h2>
+                <div className="mb-4">
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                        <BookOpen className="w-4 h-4" />
+                        {category}
+                    </span>
+                </div>
 
-                {q.hasImage && imgSrc && (
-                    <div className="flex justify-center mb-4">
-                        <img
-                            src={imgSrc}
-                            onError={onImgError}
-                            alt={`Question ${q.id}`}
-                            className="max-h-72 object-contain"
-                        />
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/25 dark:to-blue-900/25 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{q.question}</h2>
                     </div>
-                )}
 
-                {!isDrag ? (
-                    <div className="space-y-2">
-                        {options.map(([key, text]) => {
-                            const selectedThis = selected.includes(key)
-                            const base = 'w-full text-left rounded border p-3 transition-colors'
-                            let classes = 'border-gray-200 bg-white hover:bg-gray-50'
-                            if (reveal) {
-                                if (isCorrect(key)) classes = 'border-emerald-300 bg-emerald-50'
-                                else if (selectedThis) classes = 'border-red-300 bg-red-50'
-                            } else if (selectedThis) {
-                                classes = 'border-blue-300 bg-blue-50'
-                            }
-                            return (
-                                <button
-                                    key={key}
-                                    className={`${base} ${classes}`}
-                                    onClick={() => handleSelect(key)}
-                                    disabled={reveal}
-                                >
-                                    <span className="font-mono mr-2">{key}.</span>{text}
-                                </button>
-                            )
-                        })}
+                    <div className="p-6">
+                        {q.hasImage && imgSrc && (
+                            <div className="flex justify-center mb-6 group">
+                                <div className="relative">
+                                    <img
+                                        src={imgSrc}
+                                        onError={onImgError}
+                                        alt={`Question ${q.id}`}
+                                        className="max-h-80 object-contain rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-lg"
+                                        onClick={() => setImageZoomed(true)}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <div className="bg-black/70 backdrop-blur-sm rounded-full p-3">
+                                            <ZoomIn className="w-8 h-8 text-white" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isDrag ? (
+                            <div className="space-y-3">
+                                {Object.entries(q.options || {}).map(([key, text]) => {
+                                    const selectedThis = selected.includes(key)
+                                    const base = 'w-full text-left rounded-xl border-2 p-4 transition-all duration-200 flex items-start gap-3'
+                                    let classes = 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md'
+                                    let icon = null
+
+                                    if (reveal) {
+                                        if (isCorrect(key)) {
+                                            classes = 'border-emerald-400 dark:border-emerald-600 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 shadow-md'
+                                            icon = <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                                        } else if (selectedThis) {
+                                            classes = 'border-red-400 dark:border-red-600 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 shadow-md'
+                                            icon = <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                        }
+                                    } else if (selectedThis) {
+                                        classes = 'border-blue-400 dark:border-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-md'
+                                    }
+
+                                    return (
+                                        <button
+                                            key={key}
+                                            className={`${base} ${classes}`}
+                                            onClick={() => handleSelect(key)}
+                                        >
+                                            <span className="mt-1 inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-bold text-sm">
+                                                {key}
+                                            </span>
+                                            <div className="flex-1 text-left">
+                                                <div className="text-gray-900 dark:text-gray-100 font-semibold leading-snug">{text}</div>
+                                                {isMulti && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Multi-select</div>}
+                                            </div>
+                                            {icon}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <div className="mt-2">
+                                <DragMatch
+                                    pairs={q.pairs || []}
+                                    value={selected}
+                                    onChange={(tokens) => {
+                                        setSelected(tokens)
+                                        answerQuestion(q.id, tokens)
+                                    }}
+                                    reveal={reveal}
+                                    correctTokens={q.correctAnswer || []}
+                                />
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="mt-2">
-                        <DragMatch
-                            pairs={q.pairs || []}
-                            value={selected}
-                            onChange={(tokens) => {
-                                setSelected(tokens)
-                                answerQuestion(q.id, tokens)
-                            }}
-                            reveal={reveal}
-                            correctTokens={q.correctAnswer || []}
-                        />
-                    </div>
-                )}
+                </div>
 
                 <div className="mt-6 flex items-center gap-3">
                     <button
-                        className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
                         onClick={prevQuestion}
-                        disabled={state.currentQuestionIndex === 0}
+                        disabled={!showPrev}
                     >
+                        <ChevronLeft className="w-5 h-5" />
                         Prev
                     </button>
                     <button
-                        className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
                         onClick={nextQuestion}
-                        disabled={state.currentQuestionIndex >= state.practiceQuestions.length - 1}
+                        disabled={!showNext}
                     >
                         Next
+                        <ChevronRight className="w-5 h-5" />
                     </button>
                     <button
-                        className="ml-auto px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-700"
+                        className="ml-auto flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition shadow-lg"
                         onClick={toggleShowAnswer}
                     >
+                        {reveal ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         {reveal ? 'Hide Answer' : 'Show Answer'}
                     </button>
                 </div>
 
                 {reveal && (
-                    <div className="mt-6 rounded-lg border border-blue-200 bg-white shadow-sm">
-                        <div className="px-4 py-3 border-b border-blue-100 bg-blue-50/60 rounded-t-lg">
-                            <div className="text-sm font-semibold text-blue-900">Answer & Explanation</div>
+                    <div className="mt-6 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/25 dark:to-green-900/25 shadow-xl overflow-hidden animate-slideIn">
+                        <div className="px-6 py-4 border-b-2 border-emerald-200 dark:border-emerald-800 bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                <span className="text-lg font-bold text-emerald-900 dark:text-emerald-200">Answer & Explanation</span>
+                            </div>
                         </div>
-                        <div className="px-4 py-4 space-y-3">
-                            {isDrag && Array.isArray(q.correctAnswer) && q.correctAnswer.length > 0 && (
+                        <div className="p-6 space-y-3 text-gray-800 dark:text-gray-100">
+                            {isDrag ? (
                                 <div>
-                                    <div className="text-sm font-medium text-gray-700 mb-2">Correct mapping</div>
-                                    <ul className="text-sm text-gray-800 list-disc pl-5">
-                                        {q.correctAnswer.map((t, idx) => {
-                                            const m = /^L(\d+):R(\d+)$/.exec(t)
-                                            if (!m) return <li key={idx}>{t}</li>
-                                            const l = Number(m[1])
-                                            const r = Number(m[2])
-                                            const left = q.pairs?.[l]?.left ?? `L${l}`
-                                            const right = q.pairs?.[r]?.right ?? `R${r}`
-                                            return (
-                                                <li key={idx}>
-                                                    {left} <span className="mx-1 text-gray-500">→</span> {right}
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
+                                    <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 mb-2">Correct pairs</div>
+                                    <div className="flex flex-col gap-2">
+                                        {(q.correctAnswer || []).map((token) => (
+                                            <div key={token} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-700 w-fit">
+                                                <span className="font-mono text-emerald-700 dark:text-emerald-300">{token}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                                    Correct answer{(q.correctAnswer || []).length > 1 ? 's' : ''}: {(q.correctAnswer || []).join(', ')}
                                 </div>
                             )}
                             {q.explanation && (
                                 <div>
-                                    <div className="text-sm font-medium text-gray-700 mb-1">Explanation</div>
-                                    <p className="text-sm leading-relaxed text-gray-800">{q.explanation}</p>
+                                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Explanation</div>
+                                    <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">{q.explanation}</p>
                                 </div>
                             )}
                         </div>

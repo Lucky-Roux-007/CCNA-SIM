@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useApp } from '../../../context/AppContext.jsx'
 import selectRandom from '../../../utils/selectRandom.js'
+import { ArrowLeft, Play } from 'lucide-react'
+import ThemeToggle from '../../../components/UI/ThemeToggle'
 
 export default function ExamSetup() {
   const navigate = useNavigate()
@@ -38,21 +40,37 @@ export default function ExamSetup() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-900">Exam Setup</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-emerald-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4 py-12">
+      {/* Theme Toggle */}
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
 
-        <div className="space-y-8 bg-white rounded-xl p-6 shadow-md">
+      <div className="w-full max-w-2xl">
+        <button
+          onClick={() => navigate('/home')}
+          className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+        
+        <h1 className="text-4xl font-black mb-3 text-center bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
+          Exam Setup
+        </h1>
+        <p className="text-center text-gray-600 dark:text-gray-400 mb-8">Configure your exam settings</p>
+
+        <div className="space-y-8 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border border-gray-200 dark:border-gray-700">
           {/* Category selection */}
           <div>
-            <label className="block text-lg font-semibold mb-3 text-center text-gray-900">Category</label>
+            <label className="block text-lg font-bold mb-4 text-gray-900 dark:text-white">Category</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {categories.map(cat => {
                 const active = category === cat
                 return (
                   <button
                     key={cat}
-                    className={`w-full px-4 py-3 rounded-lg text-base font-semibold transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ${active ? 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-400'}`}
+                    className={`px-4 py-3 rounded-xl text-base font-semibold transition-all shadow-sm ${active ? 'bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white shadow-lg scale-105' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                     onClick={() => {
                       setCategory(cat)
                       // Reset question count to a valid option for new pool
@@ -73,7 +91,7 @@ export default function ExamSetup() {
 
           {/* Number of questions */}
           <div>
-            <label className="block text-lg font-semibold mb-3 text-center text-gray-900">Number of questions</label>
+            <label className="block text-lg font-bold mb-4 text-gray-900 dark:text-white">Number of questions</label>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {questionOptions.map(opt => {
                 const active = questionCount === opt
@@ -83,7 +101,7 @@ export default function ExamSetup() {
                   <button
                     key={String(opt)}
                     disabled={disabled}
-                    className={`px-4 py-3 rounded-lg text-base font-semibold transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ${active ? 'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-400'} ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                    className={`px-4 py-3 rounded-xl text-base font-semibold transition-all shadow-sm ${active ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-600 text-white shadow-lg scale-105' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'} ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                     onClick={() => setQuestionCount(opt)}
                   >
                     {opt === 'All' ? `All (${poolSize})` : opt}
@@ -91,19 +109,19 @@ export default function ExamSetup() {
                 )
               })}
             </div>
-            <p className="text-sm text-gray-600 mt-2 text-center">Available in selected category: {filtered.length}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">Available in selected category: {filtered.length}</p>
           </div>
 
           {/* Timer selection */}
           <div>
-            <label className="block text-lg font-semibold mb-3 text-center text-gray-900">Timer (minutes)</label>
+            <label className="block text-lg font-bold mb-4 text-gray-900 dark:text-white">Timer (minutes)</label>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {timerOptions.map(opt => {
                 const active = timer === opt
                 return (
                   <button
                     key={opt}
-                    className={`px-4 py-3 rounded-lg text-base font-semibold transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ${active ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-400'}`}
+                    className={`px-4 py-3 rounded-xl text-base font-semibold transition-all shadow-sm ${active ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-500 dark:to-indigo-600 text-white shadow-lg scale-105' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                     onClick={() => setTimer(opt)}
                   >
                     {opt}
@@ -113,9 +131,20 @@ export default function ExamSetup() {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-4 pt-2">
-            <button className="px-5 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-base font-semibold shadow-sm" onClick={() => navigate('/')}>Back</button>
-            <button className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold shadow-sm" onClick={handleStart}>Start Exam</button>
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <button 
+              className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 text-base font-semibold shadow-sm transition-all" 
+              onClick={() => navigate('/home')}
+            >
+              Cancel
+            </button>
+            <button 
+              className="group px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-500 dark:to-blue-500 hover:from-emerald-700 hover:to-blue-700 dark:hover:from-emerald-600 dark:hover:to-blue-600 text-white text-base font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2" 
+              onClick={handleStart}
+            >
+              <Play className="w-5 h-5" />
+              Start Exam
+            </button>
           </div>
         </div>
       </div>
